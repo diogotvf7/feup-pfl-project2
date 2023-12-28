@@ -3,7 +3,10 @@ module Inst (
     Code (..)
 ) where
 
+-- import Value
+
 data Inst =
+    -- Push Val
     Push Integer
     | Add
     | Mul

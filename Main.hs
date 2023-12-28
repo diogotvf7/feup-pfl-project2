@@ -47,6 +47,26 @@ main = do
   putStrLn $ "Test 19: " ++ show (testAssembler [Tru, Neg] == ("False", ""))
   putStrLn $ "Test 20: " ++ show (testAssembler [Fals, Neg] == ("True", ""))
 
+  -- Test code with Store and Fetch instructions
+  putStrLn $ "Test 21: " ++ show (testAssembler [Push 42, Store "var", Fetch "var"] == ("42", "var=42"))
+  putStrLn $ "Test 22: " ++ show (testAssembler [Tru, Store "var", Fetch "var"] == ("True", "var=True"))
+
+  -- Test code with a Noop instruction
+  putStrLn $ "Test 23: " ++ show (testAssembler [Noop] == ("", ""))
+  putStrLn $ "Test 24: " ++ show (testAssembler [Push 42, Noop] == ("42", ""))
+  putStrLn $ "Test 25: " ++ show (testAssembler [Push 42, Noop, Push 10, Noop, Noop] == ("10,42", ""))
+
+  -- Test code with a Branch instruction
+  putStrLn $ "Test 26: " ++ show (testAssembler [Tru, Branch [Push 42] [Push 10]] == ("42", ""))
+  putStrLn $ "Test 27: " ++ show (testAssembler [Fals, Branch [Push 42] [Push 10]] == ("10", ""))
+  putStrLn $ "Test 28: " ++ show (testAssembler [Push 42, Tru, Branch [Push 42] [Push 10]] == ("42,42", ""))
+
+  -- Test code with a Loop instruction
+  -- putStrLn $ "Test 29: " ++ show (testAssembler [Push 10, Loop [Push 1] [Push 2]] == ("10,2", ""))
+  -- putStrLn $ "Test 30: " ++ show (testAssembler [Tru, Loop [Push 1] [Push 2]] == ("1", ""))
+  -- putStrLn $ "Test 31: " ++ show (testAssembler [Fals, Loop [Push 1] [Push 2]] == ("2", ""))
+  -- putStrLn $ "Test 32: " ++ show (testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1"))
+
   -- -- Test error due to attempt to read on null stack
   -- testAssembler [Push 10, Add]
 

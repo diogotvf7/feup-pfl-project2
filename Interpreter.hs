@@ -6,68 +6,98 @@ import State
 import Value
 
 exec :: (Code, Stack, State) -> Maybe (Code, Stack, State)
-exec ([], stack, store) = Nothing
-exec (inst:xs, stack, store) =
+exec ([], stack, state) = Nothing
+exec (inst:xs, stack, state) =
     case inst of
         Push value ->
             let newStack = Stack.push stack (Integer value)
-            in Just (xs, newStack, store)
+            in Just (xs, newStack, state)
         Add ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
                     let newStack = Stack.push (pop (pop stack)) (Integer (a + b))
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
                 _ -> error "Add: Attempt to add non-integer values"
         Mult ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
                     let newStack = Stack.push (pop (pop stack)) (Integer (a * b))
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
                 _ -> error "Mul: Attempt to multiply non-integer values"
         Sub ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
                     let newStack = Stack.push(pop(pop stack)) (Integer (a - b))
-                    in Just (xs,newStack, store )
+                    in Just (xs,newStack, state)
                 _ -> error "Sub: Attempt to subtract non-integer values"
         Tru -> 
             let newStack = Stack.push stack Tt
-            in Just (xs, newStack, store)
+            in Just (xs, newStack, state)
         Fals ->
             let newStack = Stack.push stack Ff
-            in Just (xs, newStack, store)
+            in Just (xs, newStack, state)
         Equ ->
             case (top stack, top (pop stack)) of
                 (val1, val2) | val1 == val2 ->
                     let newStack = Stack.push (pop (pop stack)) Tt
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
                 _ ->
                     let newStack = Stack.push (pop (pop stack)) Ff
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
         Le ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
                     let newStack = Stack.push (pop (pop stack)) (if a <= b then Tt else Ff)
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
                 _ -> error "Le: Attempt to compare non-integer values"
         And -> 
             case (top stack, top (pop stack)) of
                 (Tt, Tt) ->
                     let newStack = Stack.push (pop (pop stack)) Tt
-                    in Just (xs, newStack, store)
-                _ ->
+                    in Just (xs, newStack, state)
+                (Tt, Ff) ->
                     let newStack = Stack.push (pop (pop stack)) Ff
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
+                (Ff, Tt) ->
+                    let newStack = Stack.push (pop (pop stack)) Ff
+                    in Just (xs, newStack, state)
+                (Ff, Ff) ->
+                    let newStack = Stack.push (pop (pop stack)) Ff
+                    in Just (xs, newStack, state)
+                _ -> error "And: Attempt to and non-boolean values"
         Neg ->
             case top stack of
                 Tt ->
                     let newStack = Stack.push (pop stack) Ff
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
                 Ff ->
                     let newStack = Stack.push (pop stack) Tt
-                    in Just (xs, newStack, store)
+                    in Just (xs, newStack, state)
                 _ -> error "Neg: Attempt to negate non-boolean value"
+        Fetch var ->
+            case get state var of
+                Just val ->
+                    let newStack = Stack.push stack val
+                    in Just (xs, newStack, state)
+                Nothing -> 
+                    error "Fetch: Attempt to fetch non-existent variable"
+        Store var ->
+            let val = top stack
+                newState = State.push state var val
+            in Just (xs, pop stack, newState)
+        Noop -> 
+            Just (xs, stack, state)
+        Branch code1 code2 ->
+            case top stack of
+                Tt -> Just (code1 ++ xs, pop stack, state)
+                Ff -> Just (code2 ++ xs, pop stack, state)
+                _ -> error "Branch: Attempt to branch on non-boolean value"
+        Loop code1 code2 ->
+            case top stack of
+                Tt -> Just (code1 ++ [Branch [Loop code1 code2] [Noop]] ++ xs, pop stack, state)
+                _ -> Just (code2 ++ xs, pop stack, state)
 
+ 
 run :: (Code, Stack, State) -> (Code, Stack, State)
 run (code, stack, state) = 
     case exec (code, stack, state) of
@@ -82,10 +112,10 @@ run (code, stack, state) =
 -- Fals                 | ✓
 -- Equ                  | ✓
 -- Le                   | ✓
--- And                  |
--- Neg                  |
--- Fetch                |
--- Store                |
--- Noop                 |
+-- And                  | ✓
+-- Neg                  | ✓
+-- Fetch                | ✓
+-- Store                | ✓
+-- Noop                 | ✓
 -- Branch               |
 -- Loop                 |

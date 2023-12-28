@@ -2,47 +2,86 @@ module Interpreter where
 
 import Inst (Inst (..), Code (..))
 import Stack
-import Storage
+import State
 import Value
 
-data State = 
-    State {
-        code :: Code,
-        stack :: Stack,
-        storage :: Storage
-    }
-
-initialState :: Code -> State
-initialState code = State code createEmptyStack createEmptyStorage
-                
-exec :: State -> Maybe State
-exec (State [] stack store) = Nothing
-exec (State (inst:xs) stack store) =
+exec :: (Code, Stack, State) -> Maybe (Code, Stack, State)
+exec ([], stack, store) = Nothing
+exec (inst:xs, stack, store) =
     case inst of
         Push value ->
-            let newStack = Stack.push stack (Value.Integer value)
-            in Just $ State xs newStack store
+            let newStack = Stack.push stack (Integer value)
+            in Just (xs, newStack, store)
         Add ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
-                    let newStack = Stack.push (pop (pop stack)) (Value.Integer (a + b))
-                    in Just $ State xs newStack store
+                    let newStack = Stack.push (pop (pop stack)) (Integer (a + b))
+                    in Just (xs, newStack, store)
                 _ -> error "Add: Attempt to add non-integer values"
-          
-run :: State -> State
-run state =
-    case exec state of
-        Just nextState -> run nextState
-        Nothing -> state
+        Mult ->
+            case (top stack, top (pop stack)) of
+                (Integer a, Integer b) ->
+                    let newStack = Stack.push (pop (pop stack)) (Integer (a * b))
+                    in Just (xs, newStack, store)
+                _ -> error "Mul: Attempt to multiply non-integer values"
+        Sub ->
+            case (top stack, top (pop stack)) of
+                (Integer a, Integer b) ->
+                    let newStack = Stack.push(pop(pop stack)) (Integer (a - b))
+                    in Just (xs,newStack, store )
+                _ -> error "Sub: Attempt to subtract non-integer values"
+        Tru -> 
+            let newStack = Stack.push stack Tt
+            in Just (xs, newStack, store)
+        Fals ->
+            let newStack = Stack.push stack Ff
+            in Just (xs, newStack, store)
+        Equ ->
+            case (top stack, top (pop stack)) of
+                (val1, val2) | val1 == val2 ->
+                    let newStack = Stack.push (pop (pop stack)) Tt
+                    in Just (xs, newStack, store)
+                _ ->
+                    let newStack = Stack.push (pop (pop stack)) Ff
+                    in Just (xs, newStack, store)
+        Le ->
+            case (top stack, top (pop stack)) of
+                (Integer a, Integer b) ->
+                    let newStack = Stack.push (pop (pop stack)) (if a <= b then Tt else Ff)
+                    in Just (xs, newStack, store)
+                _ -> error "Le: Attempt to compare non-integer values"
+        And -> 
+            case (top stack, top (pop stack)) of
+                (Tt, Tt) ->
+                    let newStack = Stack.push (pop (pop stack)) Tt
+                    in Just (xs, newStack, store)
+                _ ->
+                    let newStack = Stack.push (pop (pop stack)) Ff
+                    in Just (xs, newStack, store)
+        Neg ->
+            case top stack of
+                Tt ->
+                    let newStack = Stack.push (pop stack) Ff
+                    in Just (xs, newStack, store)
+                Ff ->
+                    let newStack = Stack.push (pop stack) Tt
+                    in Just (xs, newStack, store)
+                _ -> error "Neg: Attempt to negate non-boolean value"
+
+run :: (Code, Stack, State) -> (Code, Stack, State)
+run (code, stack, state) = 
+    case exec (code, stack, state) of
+        Just nextInterpreter -> run nextInterpreter
+        Nothing -> (code, stack, state)
 
 -- Push                 | ✓
--- Add                  | 
--- Mul                  |
--- Sub                  |
--- PushTrue             |
--- PushFalse            |
--- Eq                   |
--- Le                   |
+-- Add                  | ✓ 
+-- Mult                 | ✓
+-- Sub                  | ✓
+-- Tru                  | ✓ 
+-- Fals                 | ✓
+-- Equ                  | ✓
+-- Le                   | ✓
 -- And                  |
 -- Neg                  |
 -- Fetch                |

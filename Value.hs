@@ -4,7 +4,7 @@ data Val =
     Integer Integer
     | Tt
     | Ff
-    deriving Show
+    deriving (Eq, Show)
 
 value2Int :: Val -> Integer
 value2Int (Integer x) = x

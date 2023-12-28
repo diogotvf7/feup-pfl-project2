@@ -62,6 +62,7 @@ main = do
   putStrLn $ "Test 28: " ++ show (testAssembler [Push 42, Tru, Branch [Push 42] [Push 10]] == ("42,42", ""))
 
   -- Test code with a Loop instruction
+  putStrLn $ "Test 29: " ++ show (testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1"))
   -- putStrLn $ "Test 29: " ++ show (testAssembler [Push 10, Loop [Push 1] [Push 2]] == ("10,2", ""))
   -- putStrLn $ "Test 30: " ++ show (testAssembler [Tru, Loop [Push 1] [Push 2]] == ("1", ""))
   -- putStrLn $ "Test 31: " ++ show (testAssembler [Fals, Loop [Push 1] [Push 2]] == ("2", ""))

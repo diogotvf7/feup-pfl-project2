@@ -91,11 +91,13 @@ exec (inst:xs, stack, state) =
             case top stack of
                 Tt -> Just (code1 ++ xs, pop stack, state)
                 Ff -> Just (code2 ++ xs, pop stack, state)
-                _ -> error "Branch: Attempt to branch on non-boolean value"
+                _ -> error "Branch: Branch condition is a non-boolean value"
         Loop code1 code2 ->
             case top stack of
-                Tt -> Just (code1 ++ [Branch [Loop code1 code2] [Noop]] ++ xs, pop stack, state)
-                _ -> Just (code2 ++ xs, pop stack, state)
+                -- c1 [branch([c2, loop(c1, c2)], [noop])]
+                Tt -> Just (code1 ++ [Branch (code2 ++ [Loop code1 code2]) [Noop]] ++ xs, pop stack, state)
+                Ff -> Just (xs, pop stack, state)
+                _ -> error "Loop: Loop condition is a non-boolean value"
 
  
 run :: (Code, Stack, State) -> (Code, Stack, State)
@@ -117,5 +119,5 @@ run (code, stack, state) =
 -- Fetch                | ✓
 -- Store                | ✓
 -- Noop                 | ✓
--- Branch               |
+-- Branch               | ✓
 -- Loop                 |

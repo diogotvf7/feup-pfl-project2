@@ -9,8 +9,8 @@ exec :: (Code, Stack, State) -> Maybe (Code, Stack, State)
 exec ([], stack, state) = Nothing
 exec (inst:xs, stack, state) =
     case inst of
-        Push value ->
-            let newStack = Stack.push stack (Integer value)
+        Push val -> 
+            let newStack = Stack.push stack (Integer val)
             in Just (xs, newStack, state)
         Add ->
             case (top stack, top (pop stack)) of
@@ -93,13 +93,9 @@ exec (inst:xs, stack, state) =
                 Ff -> Just (code2 ++ xs, pop stack, state)
                 _ -> error "Branch: Branch condition is a non-boolean value"
         Loop code1 code2 ->
-            case top stack of
-                -- c1 [branch([c2, loop(c1, c2)], [noop])]
-                Tt -> Just (code1 ++ [Branch (code2 ++ [Loop code1 code2]) [Noop]] ++ xs, pop stack, state)
-                Ff -> Just (xs, pop stack, state)
-                _ -> error "Loop: Loop condition is a non-boolean value"
+            let code = code1 ++ [Branch (code2 ++ [Loop code1 code2]) [Noop]] ++ xs
+            in Just (code, stack, state)
 
- 
 run :: (Code, Stack, State) -> (Code, Stack, State)
 run (code, stack, state) = 
     case exec (code, stack, state) of

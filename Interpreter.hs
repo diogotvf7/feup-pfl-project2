@@ -101,19 +101,3 @@ run (code, stack, state) =
     case exec (code, stack, state) of
         Just nextInterpreter -> run nextInterpreter
         Nothing -> (code, stack, state)
-
--- Push                 | ✓
--- Add                  | ✓ 
--- Mult                 | ✓
--- Sub                  | ✓
--- Tru                  | ✓ 
--- Fals                 | ✓
--- Equ                  | ✓
--- Le                   | ✓
--- And                  | ✓
--- Neg                  | ✓
--- Fetch                | ✓
--- Store                | ✓
--- Noop                 | ✓
--- Branch               | ✓
--- Loop                 |

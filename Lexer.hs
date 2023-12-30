@@ -15,10 +15,10 @@ data Token
     | T_lbracket              -- | (
     | T_rbracket              -- | )
     | T_assign                -- | :=
-    | T_eq                    -- | =
-    | T_eqeq                  -- | ==
-    | T_and                   -- | and
     | T_lesseq                -- | <=
+    | T_aeq                   -- | ==
+    | T_beq                   -- | =
+    | T_and                   -- | and
     | T_integer Integer       -- | Number
     | T_bool Bool             -- | Boolean
     | T_var String            -- | Variable
@@ -39,8 +39,8 @@ lexer ('(':restStr) = T_lbracket : lexer restStr
 lexer (')':restStr) = T_rbracket : lexer restStr
 lexer (':':'=':restStr) = T_assign : lexer restStr
 lexer ('<':'=':restStr) = T_lesseq : lexer restStr
-lexer ('=':'=':restStr) = T_eqeq : lexer restStr
-lexer ('=':restStr) = T_eq : lexer restStr
+lexer ('=':'=':restStr) = T_aeq : lexer restStr
+lexer ('=':restStr) = T_beq : lexer restStr
 lexer ('a':'n':'d':restStr) = T_and : lexer restStr
 lexer ('T':'r':'u':'e':restStr) = T_bool True : lexer restStr
 lexer ('F':'a':'l':'s':'e':restStr) = T_bool False : lexer restStr

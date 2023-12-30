@@ -17,19 +17,19 @@ exec (inst:xs, stack, state) =
                 (Integer a, Integer b) ->
                     let newStack = Stack.push (pop (pop stack)) (Integer (a + b))
                     in Just (xs, newStack, state)
-                _ -> error "Add: Attempt to add non-integer values"
+                _ -> error "Run-time error"
         Mult ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
                     let newStack = Stack.push (pop (pop stack)) (Integer (a * b))
                     in Just (xs, newStack, state)
-                _ -> error "Mul: Attempt to multiply non-integer values"
+                _ -> error "Run-time error"
         Sub ->
             case (top stack, top (pop stack)) of
                 (Integer a, Integer b) ->
                     let newStack = Stack.push(pop(pop stack)) (Integer (a - b))
                     in Just (xs,newStack, state)
-                _ -> error "Sub: Attempt to subtract non-integer values"
+                _ -> error "Run-time error"
         Tru -> 
             let newStack = Stack.push stack Tt
             in Just (xs, newStack, state)
@@ -49,7 +49,7 @@ exec (inst:xs, stack, state) =
                 (Integer a, Integer b) ->
                     let newStack = Stack.push (pop (pop stack)) (if a <= b then Tt else Ff)
                     in Just (xs, newStack, state)
-                _ -> error "Le: Attempt to compare non-integer values"
+                _ -> error "Run-time error"
         And -> 
             case (top stack, top (pop stack)) of
                 (Tt, Tt) ->
@@ -64,7 +64,7 @@ exec (inst:xs, stack, state) =
                 (Ff, Ff) ->
                     let newStack = Stack.push (pop (pop stack)) Ff
                     in Just (xs, newStack, state)
-                _ -> error "And: Attempt to and non-boolean values"
+                _ -> error "Run-time error"
         Neg ->
             case top stack of
                 Tt ->
@@ -73,14 +73,14 @@ exec (inst:xs, stack, state) =
                 Ff ->
                     let newStack = Stack.push (pop stack) Tt
                     in Just (xs, newStack, state)
-                _ -> error "Neg: Attempt to negate non-boolean value"
+                _ -> error "Run-time error"
         Fetch var ->
             case get state var of
                 Just val ->
                     let newStack = Stack.push stack val
                     in Just (xs, newStack, state)
                 Nothing -> 
-                    error "Fetch: Attempt to fetch non-existent variable"
+                    error "Run-time error"
         Store var ->
             let val = top stack
                 newState = State.push state var val
@@ -91,7 +91,7 @@ exec (inst:xs, stack, state) =
             case top stack of
                 Tt -> Just (code1 ++ xs, pop stack, state)
                 Ff -> Just (code2 ++ xs, pop stack, state)
-                _ -> error "Branch: Branch condition is a non-boolean value"
+                _ -> error "Run-time error"
         Loop code1 code2 ->
             let code = code1 ++ [Branch (code2 ++ [Loop code1 code2]) [Noop]] ++ xs
             in Just (code, stack, state)

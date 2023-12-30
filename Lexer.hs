@@ -57,4 +57,3 @@ lexNum str = T_integer (read numStr) : lexer restStr
 lexVar :: String -> [Token]
 lexVar str = T_var varStr : lexer restStr
     where (varStr, restStr) = span isAlpha str
-

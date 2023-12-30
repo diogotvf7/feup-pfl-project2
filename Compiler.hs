@@ -1,5 +1,7 @@
 module Compiler where
 
+import Parser
+
 compA :: Aexp -> Code
 compA (A_var varName) = [Fetch varName]
 compA (A_num num) = [Push num]

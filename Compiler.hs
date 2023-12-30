@@ -18,14 +18,21 @@ compB (B_and bexp1 bexp2) = [compB bexp1, compB bexp2, And]
 
 compile :: Program -> Code
 compile [] = []
-compile statements = 
-    case stms of 
-        S_assign : xs ->
-            let 
-
-
-
-                            -- | ✓ 
-S_assign String Aexp        -- |  
-S_if Bexp [Stm] [Stm]       -- | 
-S_while Bexp [Stm]          -- | 
+compile (S_assign var aexp : prog) = compA aexp ++ [Store var] ++ compile stms
+compile (stm:stms) =
+    case stm of
+        S_assign var aexp ->
+            compA aexp ++ [Store var] ++ compile stms
+        S_if bexp stm1 stm2 ->
+            let
+                on_true = compile stm1
+                on_false = compile stm2
+                condition = compB bexp
+            in
+                condition ++ [Branch on_true on_false] ++ compile stms
+        S_while bexp stm1 ->
+            let
+                on_true = compile stm1
+                condition = compB bexp
+            in
+                condition ++ [Loop on_true condition] ++ compile stms

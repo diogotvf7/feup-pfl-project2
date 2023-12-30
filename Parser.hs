@@ -33,132 +33,109 @@ parse input = parseStatements (lexer input)
 
 parseStatements :: [Token] -> [Stm]
 parseStatements [] = []
-parseStatements tokens =
-    let
-        (stm, tokens') = parseStatement tokens
-    in
-        stm : parseStatements tokens'
-    
-parseStatement :: [Token] -> (Stm, [Token])
-parseStatement (T_var varName : T_assign : tokens) =
-    let
-        (aexp, tokens') = parseAexp tokens
-    in
-        (S_assign varName aexp, tokens')
-parseStatement (T_if : tokens) =
-    let
-        (bexp, tokens') = parseBexp tokens
-        (stms1, tokens'') = parseStatements tokens'
-        (stms2, tokens''') = parseStatements tokens''
-    in
-        (S_if bexp stms1 stms2, tokens''')
-parseStatement (T_while : tokens) =
-    let
-        (bexp, tokens') = parseBexp tokens
-        (stms, tokens'') = parseStatements tokens'
-    in
-        (S_while bexp stms, tokens'')
-parseStatement tokens = error ("parseStatement: unexpected tokens " ++ show tokens)
 
-parseAexp :: [Token] -> (Aexp, [Token])
-parseAexp tokens =
-    let
-        (aexp, tokens') = parseAexp1 tokens
+parseStatements (T_var var : T_assign : tokens) =
+    let 
+        aexp = parseA (takeWhile (/= T_semicolon) tokens)
     in
-        parseAexp' aexp tokens'
+        S_assign var aexp : parseStatements (drop 1 (dropWhile (/= T_semicolon) tokens))
 
-parseAexp' :: Aexp -> [Token] -> (Aexp, [Token])
-parseAexp' aexp (T_plus : tokens) =
-    let
-        (aexp', tokens') = parseAexp1 tokens
-    in
-        parseAexp' (A_add aexp aexp') tokens'
-parseAexp' aexp (T_less : tokens) =
-    let
-        (aexp', tokens') = parseAexp1 tokens
-    in
-        parseAexp' (A_sub aexp aexp') tokens'
-parseAexp' aexp tokens = (aexp, tokens)
+-- parseStatements (T_while : tokens) = 
+--     let 
+--         bexp = parseB takeWhile (/= T_do) tokens
+--         (body, tokens') = parseStatements drop 1 (dropWhile (/= T_do) tokens)
+--     in
+--         S_while bexp body : 
 
-parseAexp1 :: [Token] -> (Aexp, [Token])
-parseAexp1 tokens =
-    let
-        (aexp, tokens') = parseAexp2 tokens
-    in
-        parseAexp1' aexp tokens'
+-- parseStatements (T_if _ tokens) = 
+--     ...
 
-parseAexp1' :: Aexp -> [Token] -> (Aexp, [Token])
-parseAexp1' aexp (T_times : tokens) =
-    let
-        (aexp', tokens') = parseAexp2 tokens
-    in
-        parseAexp1' (A_mul aexp aexp') tokens'
-parseAexp1' aexp tokens = (aexp, tokens)
+-- ===============================<>=============================== --
+-- %%=============================<>=============================%% --
+-- %%%%===========================<>===========================%%%% --
+-- %%%%%%%%=======================<>=======================%%%%%%%% --
+-- %%%%%%%%%%%%%%%%===============<>===============%%%%%%%%%%%%%%%% --
+-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-<>-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% --
+-- %%%%%%%%%%%%%%%%===============<>===============%%%%%%%%%%%%%%%% --
+-- %%%%%%%%=======================<>=======================%%%%%%%% --
+-- %%%%===========================<>===========================%%%% --
+-- ===============================<>=============================== --
 
-parseAexp2 :: [Token] -> (Aexp, [Token])
-parseAexp2 (T_var varName : tokens) = (A_var varName, tokens)
-parseAexp2 (T_integer num : tokens) = (A_num num, tokens)
-parseAexp2 (T_lbracket : tokens) =
-    let
-        (aexp, tokens') = parseAexp tokens
-    in
-        case tokens' of
-            T_rbracket : tokens'' -> (aexp, tokens'')
-            _ -> error ("parseAexp2: expected ) but got " ++ show tokens')
-parseAexp2 tokens = error ("parseAexp2: unexpected tokens " ++ show tokens)
+parseA :: [Token] -> Aexp
+parseA tokens =
+    case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
+        Just (expr, []) -> expr
+        _ -> error "Parse error"
 
-parseBexp :: [Token] -> (Bexp, [Token])
-parseBexp tokens =
-    let
-        (bexp, tokens') = parseBexp1 tokens
-    in
-        parseBexp' bexp tokens'
+parseIntOrVar :: [Token] -> Maybe (Aexp, [Token])
+parseIntOrVar (T_var var : restTokens)
+    = Just (A_var var, restTokens)
+parseIntOrVar (T_integer num : restTokens)
+    = Just (A_num num, restTokens)
+parseIntOrVar tokens
+    = Nothing
 
-parseBexp' :: Bexp -> [Token] -> (Bexp, [Token])
-parseBexp' bexp (T_beq : tokens) =
-    let
-        (bexp', tokens') = parseBexp1 tokens
-    in
-        parseBexp' (B_beq bexp bexp') tokens'
-parseBexp' bexp (T_lesseq : tokens) =
-    let
-        (bexp', tokens') = parseBexp1 tokens
-    in
-        parseBexp' (B_leq bexp bexp') tokens'
-parseBexp' bexp tokens = (bexp, tokens)
+parseProdOrIntOrVar :: [Token] -> Maybe (Aexp, [Token])
+parseProdOrIntOrVar tokens
+    = case parseIntOrVar tokens of
+        Just (expr1, (T_times : restTokens1)) ->
+            case parseProdOrIntOrVar restTokens1 of
+                Just (expr2, restTokens2) ->
+                    Just (A_mul expr1 expr2, restTokens2)
+                Nothing -> Nothing
+        result -> result -- can be ’Nothing’ or valid
 
-parseBexp1 :: [Token] -> (Bexp, [Token])
-parseBexp1 (T_bool True : tokens) = (B_true, tokens)
-parseBexp1 (T_bool False : tokens) = (B_false, tokens)
-parseBexp1 (T_lbracket : tokens) =
-    let
-        (bexp, tokens') = parseBexp tokens
-    in
-        case tokens' of
-            T_rbracket : tokens'' -> (bexp, tokens'')
-            _ -> error ("parseBexp1: expected ) but got " ++ show tokens')
-parseBexp1 (T_not : tokens) =
-    let
-        (bexp, tokens') = parseBexp1 tokens
-    in
-        (B_not bexp, tokens')
-parseBexp1 tokens =
-    let
-        (aexp1, tokens') = parseAexp tokens
-    in
-        parseBexp1' aexp1 tokens'
+parseSumOrSubOrProdOrIntOrVar :: [Token] -> Maybe (Aexp, [Token])
+parseSumOrSubOrProdOrIntOrVar tokens
+    = case parseProdOrIntOrVar tokens of
+        Just (expr1, (T_plus : restTokens1)) ->
+            case parseProdOrIntOrVar restTokens1 of
+                Just (expr2, restTokens2) ->
+                    Just (A_add expr1 expr2, restTokens2)
+                Nothing -> Nothing
+        Just (expr1, (T_less : restTokens1)) ->
+            case parseProdOrIntOrVar restTokens1 of
+                Just (expr2, restTokens2) ->
+                    Just (A_sub expr1 expr2, restTokens2)
+                Nothing -> Nothing
+        result -> result -- could be ’Nothing’ or valid
 
-parseBexp1' :: Aexp -> [Token] -> (Bexp, [Token])
-parseBexp1' aexp1 (T_aeq : tokens) =
-    let
-        (aexp2, tokens') = parseAexp tokens
-    in
-        (B_aeq aexp1 aexp2, tokens')
-parseBexp1' aexp1 (T_and : tokens) =
-    let
-        (aexp2, tokens') = parseAexp tokens
-    in
-        (B_and (B_aeq aexp1 aexp2) (B_aeq aexp2 aexp1), tokens')
-parseBexp1' aexp1 tokens = (B_aeq aexp1 (A_num 0), tokens)
+parseIntOrVarOrParenExpr :: [Token] -> Maybe (Aexp, [Token])
+parseIntOrVarOrParenExpr (T_var var : restTokens)
+    = Just (A_var var, restTokens)
+parseIntOrVarOrParenExpr (T_integer num : restTokens)
+    = Just (A_num num, restTokens)
+parseIntOrVarOrParenExpr (T_lbracket : restTokens1)
+    = case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
+        Just (expr, (T_rbracket : restTokens2)) ->
+            Just (expr, restTokens2)
+        Just _ -> Nothing -- no closing paren
+        Nothing -> Nothing
+parseIntOrVarOrParenExpr tokens = Nothing
 
-    
+parseProdOrIntOrVarOrPar :: [Token] -> Maybe (Aexp, [Token])
+parseProdOrIntOrVarOrPar tokens
+    = case parseIntOrVarOrParenExpr tokens of
+        Just (expr1, (T_times : restTokens1)) ->
+            case parseProdOrIntOrVarOrPar restTokens1 of
+                Just (expr2, restTokens2) ->
+                    Just (A_mul expr1 expr2, restTokens2)
+                Nothing -> Nothing
+        result -> result
+
+parseSumOrSubOrProdOrIntOrVarOrPar::[Token] -> Maybe (Aexp, [Token])
+parseSumOrSubOrProdOrIntOrVarOrPar tokens
+    = case parseProdOrIntOrVarOrPar tokens of
+        Just (expr1, (T_plus : restTokens1)) ->
+            case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
+                Just (expr2, restTokens2) ->
+                    Just (A_add expr1 expr2, restTokens2)
+                Nothing -> Nothing
+        Just (expr1, (T_less : restTokens1)) ->
+            case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
+                Just (expr2, restTokens2) ->
+                    Just (A_sub expr1 expr2, restTokens2)
+                Nothing -> Nothing
+        result -> result
+
+-- parseB :: [Token] -> (Bexp, [Token])

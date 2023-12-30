@@ -4,6 +4,7 @@ import Data.Char (isSpace, isDigit, isAlpha)
 
 data Token
     = T_while                 -- | while
+    | T_do                    -- | do
     | T_if                    -- | if
     | T_then                  -- | then
     | T_else                  -- | else
@@ -27,6 +28,7 @@ data Token
 lexer :: String -> [Token]
 lexer [] = []
 lexer ('w':'h':'i':'l':'e':restStr) = T_while : lexer restStr
+lexer ('d':'o':restStr) = T_do : lexer restStr
 lexer ('i':'f':restStr) = T_if : lexer restStr
 lexer ('t':'h':'e':'n':restStr) = T_then : lexer restStr
 lexer ('e':'l':'s':'e':restStr) = T_else : lexer restStr

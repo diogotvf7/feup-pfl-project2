@@ -2,6 +2,7 @@ module Lexer where
 
 import Data.Char (isSpace, isDigit, isAlpha)
 
+-- Defining the 'Token' data type that corresponds that serve as the input to the parsing stage.
 data Token
     = T_while                 -- | while
     | T_do                    -- | do
@@ -16,7 +17,7 @@ data Token
     | T_lbracket              -- | (
     | T_rbracket              -- | )
     | T_assign                -- | :=
-    | T_leq                -- | <=
+    | T_leq                   -- | <=
     | T_aeq                   -- | ==
     | T_beq                   -- | =
     | T_and                   -- | and
@@ -25,6 +26,8 @@ data Token
     | T_var String            -- | Variable
     deriving (Eq, Show)
 
+
+-- Function that transforms a string to a list of tokens.
 lexer :: String -> [Token]
 lexer [] = []
 lexer ('w':'h':'i':'l':'e':restStr) = T_while : lexer restStr
@@ -52,10 +55,12 @@ lexer (chr:restStr)
     | isAlpha chr = lexVar (chr:restStr)
     | otherwise = error ("lexer: unexpected character " ++ [chr])
 
+-- Function responsible for transforming a integer to it's respective token.
 lexNum :: String -> [Token]
 lexNum str = T_integer (read numStr) : lexer restStr
     where (numStr, restStr) = span isDigit str
 
+-- Function responsible for transforming a variable to it's respective token.
 lexVar :: String -> [Token]
 lexVar str = T_var varStr : lexer restStr
     where (varStr, restStr) = span isAlpha str

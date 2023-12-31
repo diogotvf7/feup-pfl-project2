@@ -47,26 +47,41 @@ parseStatements (T_var var : T_assign : tokens) =
 --     in
 --         S_while bexp body : 
 
+-- if Bexp then [Stm] else [Stm] ;
 parseStatements (T_if : tokens) = 
-    let 
-        (bexp, tokens') = getBody tokens
-        ()
+    case parseBody tokens of
+        (condition, restTokens1) -> 
+            -- error $ "\n\ncondition: " ++ show condition ++ "\n\n rest: " ++ show restTokens1
+            case parseBody (restTokens1) of
+                (trueBranch, restTokens2) ->
+                    case parseBody (restTokens2) of
+                        (falseBranch, restTokens3) ->
+                            -- error $ "\n\ncondition: " ++ show condition ++ "\n\ntrueBranch: " ++ show (drop 1 trueBranch) ++ "\n\nfalseBranch: " ++ show (drop 1 falseBranch)
+                            case restTokens3 of
+                                (T_semicolon : restTokens4) ->
+                                    S_if (parseB condition) (parseStatements (drop 1 trueBranch)) (parseStatements (drop 1 falseBranch)) : parseStatements restTokens4
+                                (restTokens4) -> 
+                                    S_if (parseB condition) (parseStatements (drop 1 trueBranch)) (parseStatements (drop 1 falseBranch)) : parseStatements restTokens4
 
-getBody :: [Token] -> ([Token], [Token])
-getBody (T_lbracket : tokens) = getBodyAux tokens [] [T_lbracket]
-getBody tokens = (takeWhile (/= T_semicolon), drop 1 (dropWhile (/= T_semicolon) tokens))
 
-getBodyAux :: [Token] -> [Token] -> [Token] -> ([Token], [Token])
-getBodyAux [] body stack = error "Run-time error"
-getBodyAux (T_lbracket : tokens) body stack = getBodyAux tokens (body ++ [T_lbracket]) (T_lbracket : stack)
-getBodyAux (T_rbracket : tokens) body (T_lbracket : stack) = 
+parseBody :: [Token] -> ([Token], [Token])
+parseBody (T_lbracket : tokens) = parseBodyAux tokens [] [T_lbracket]
+parseBody tokens = (takeWhile (/= T_semicolon) tokens, drop 1 (dropWhile (/= T_semicolon) tokens))
+-- parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then) tokens, drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then) tokens))
+-- parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens, drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens))
+
+parseBodyAux :: [Token] -> [Token] -> [Token] -> ([Token], [Token])
+parseBodyAux [] body stack = error "Run-time error"
+parseBodyAux (T_lbracket : tokens) body stack = parseBodyAux tokens (body ++ [T_lbracket]) (T_lbracket : stack)
+parseBodyAux (T_rbracket : tokens) body (T_lbracket : stack) = 
     if stack == [] then (body, tokens)
-    else getBodyAux tokens (body ++ [T_rbracket]) stack
-getBodyAux (token : tokens) body stack = getBodyAux tokens (body ++ [token]) stack
+    else parseBodyAux tokens (body ++ [T_rbracket]) stack
+parseBodyAux (token : tokens) body stack = parseBodyAux tokens (body ++ [token]) stack
 
+-- ----------------------------------------------------------------------------
 parseA :: [Token] -> Aexp
 parseA tokens =
-    case parseSumOrSubOrProdOrPar tokens of
+    case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
         Just (expr, []) -> expr
         _ -> error "Run-time error"
 
@@ -77,7 +92,7 @@ parseIntOrVarOrPar (T_var var : restTokens)
 parseIntOrVarOrPar (T_integer num : restTokens)
     = Just (A_num num, restTokens)
 parseIntOrVarOrPar (T_lbracket : restTokens1)
-    = case parseSumOrSubOrProdOrPar restTokens1 of
+    = case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
         Just (expr, (T_rbracket : restTokens2)) ->
             Just (expr, restTokens2)
         Just _ -> Nothing -- no closing paren
@@ -85,34 +100,33 @@ parseIntOrVarOrPar (T_lbracket : restTokens1)
 parseIntOrVarOrPar tokens = Nothing
 
 -- Prod Int Var Par
-parseProdOrPar :: [Token] -> Maybe (Aexp, [Token])
-parseProdOrPar tokens
+parseProdOrIntOrVarOrPar :: [Token] -> Maybe (Aexp, [Token])
+parseProdOrIntOrVarOrPar tokens
     = case parseIntOrVarOrPar tokens of
         Just (expr1, (T_times : restTokens1)) ->
-            case parseProdOrPar restTokens1 of
+            case parseProdOrIntOrVarOrPar restTokens1 of
                 Just (expr2, restTokens2) ->
                     Just (A_mul expr1 expr2, restTokens2)
                 Nothing -> Nothing
         result -> result
 
 -- Sum Sub Prod Int Var Par
-parseSumOrSubOrProdOrPar::[Token] -> Maybe (Aexp, [Token])
-parseSumOrSubOrProdOrPar tokens
-    = case parseProdOrPar tokens of
+parseSumOrSubOrProdOrIntOrVarOrPar::[Token] -> Maybe (Aexp, [Token])
+parseSumOrSubOrProdOrIntOrVarOrPar tokens
+    = case parseProdOrIntOrVarOrPar tokens of
         Just (expr1, (T_plus : restTokens1)) ->
-            case parseSumOrSubOrProdOrPar restTokens1 of
+            case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
                 Just (expr2, restTokens2) ->
                     Just (A_add expr1 expr2, restTokens2)
                 Nothing -> Nothing
         Just (expr1, (T_less : restTokens1)) ->
-            case parseSumOrSubOrProdOrPar restTokens1 of
+            case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
                 Just (expr2, restTokens2) ->
                     Just (A_sub expr1 expr2, restTokens2)
                 Nothing -> Nothing
         result -> result
 
 -- ----------------------------------------------------------------------------
-
 parseB :: [Token] -> Bexp
 parseB tokens =
     case parseAndOrBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens of
@@ -136,9 +150,9 @@ parseTrueOrFalseOrPar tokens = Nothing
 -- Leq True False Par
 parseLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseLeqOrTrueOrFalseOrPar tokens
-    = case parseSumOrSubOrProdOrPar tokens of
+    = case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
         Just (expr1, (T_leq : restTokens1)) ->
-            case parseSumOrSubOrProdOrPar restTokens1 of
+            case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
                 Just (expr2, restTokens2) ->
                     Just (B_leq expr1 expr2, restTokens2)
                 Nothing -> Nothing
@@ -147,24 +161,37 @@ parseLeqOrTrueOrFalseOrPar tokens
 -- Aeq Leq True False Par
 parseAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseAeqOrLeqOrTrueOrFalseOrPar tokens
-    = case parseSumOrSubOrProdOrPar tokens of
-        Just (expr1, (T_leq : restTokens1)) ->
-            case parseSumOrSubOrProdOrPar restTokens1 of
+    = case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
+        Just (expr1, (T_aeq : restTokens1)) ->
+            case parseSumOrSubOrProdOrIntOrVarOrPar restTokens1 of
                 Just (expr2, restTokens2) ->
-                    Just (B_leq expr1 expr2, restTokens2)
+                    Just (B_aeq expr1 expr2, restTokens2)
                 Nothing -> Nothing
         _ -> parseLeqOrTrueOrFalseOrPar tokens
 
 -- Not Aeq Leq True False Par
+-- parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
+-- parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
+--     = case parseAeqOrLeqOrTrueOrFalseOrPar tokens of
+--         Just (expr1, (T_not : restTokens1)) ->
+--             case parseNotOrAeqOrLeqOrTrueOrFalseOrPar restTokens1 of
+--                 Just (expr2, restTokens2) ->
+--                     Just (B_not expr2, restTokens2)
+--                 Nothing -> Nothing
+--         a -> error $ "error: " ++ show a 
+--         Just (expr1, _) -> error $ "Expr: " ++ show expr1
+--         result -> result
+
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
-parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
-    = case parseAeqOrLeqOrTrueOrFalseOrPar tokens of
-        Just (expr, restTokens) -> Just (expr, restTokens)
-        Nothing ->
-            case parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens of
-                Just (expr, (T_not : restTokens)) ->
-                    Just (B_not expr, restTokens)
-                result -> result
+parseNotOrAeqOrLeqOrTrueOrFalseOrPar (T_not : restTokens)
+    -- = error $ "rest: " ++ show restTokens
+    = case parseAeqOrLeqOrTrueOrFalseOrPar restTokens of
+        Just (expr1, restTokens1) ->
+            Just (B_not expr1, restTokens1)
+        -- result -> error "AMDIASJDIJA IODJAISO JDOAJD OIASJDIO JASSOIDJ AS"
+        result -> parseAeqOrLeqOrTrueOrFalseOrPar restTokens
+parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens = parseAeqOrLeqOrTrueOrFalseOrPar tokens
+
 
 -- Beq Not Aeq Leq True False Par
 parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])

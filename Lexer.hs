@@ -16,7 +16,7 @@ data Token
     | T_lbracket              -- | (
     | T_rbracket              -- | )
     | T_assign                -- | :=
-    | T_lesseq                -- | <=
+    | T_leq                -- | <=
     | T_aeq                   -- | ==
     | T_beq                   -- | =
     | T_and                   -- | and
@@ -40,7 +40,7 @@ lexer (';':restStr) = T_semicolon : lexer restStr
 lexer ('(':restStr) = T_lbracket : lexer restStr
 lexer (')':restStr) = T_rbracket : lexer restStr
 lexer (':':'=':restStr) = T_assign : lexer restStr
-lexer ('<':'=':restStr) = T_lesseq : lexer restStr
+lexer ('<':'=':restStr) = T_leq : lexer restStr
 lexer ('=':'=':restStr) = T_aeq : lexer restStr
 lexer ('=':restStr) = T_beq : lexer restStr
 lexer ('a':'n':'d':restStr) = T_and : lexer restStr

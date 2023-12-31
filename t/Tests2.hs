@@ -17,7 +17,7 @@ main = do
     putStrLn $ "Test T_eq: " ++ show (testLexer "=" == [T_beq])
     putStrLn $ "Test T_eq: " ++ show (testLexer "==" == [T_aeq])
     putStrLn $ "Test T_and: " ++ show (testLexer "and" == [T_and])
-    putStrLn $ "Test T_lesseq: " ++ show (testLexer "<=" == [T_lesseq])
+    putStrLn $ "Test T_leq: " ++ show (testLexer "<=" == [T_leq])
     putStrLn $ "Test T_integer: " ++ show (testLexer "42" == [T_integer 42])
     putStrLn $ "Test T_bool: " ++ show (testLexer "True" == [T_bool True])
     putStrLn $ "Test T_bool: " ++ show (testLexer "False" == [T_bool False])

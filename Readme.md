@@ -257,8 +257,6 @@ run (code, stack, state) =
         Nothing -> (code, stack, state)
 ```
 
-In order to test our code we ran it through several test cases, and got positive results in all of them, here are the tests we ran:
-
 ## Part 2
 
 ### Description

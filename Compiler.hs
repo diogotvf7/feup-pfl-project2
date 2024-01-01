@@ -37,25 +37,4 @@ compile (S_while bexp stm : prog) =                                             
         on_true = compile stm
         condition = compB bexp
     in
-        [Loop on_true condition] ++ compile prog
-
-
-
-
--- compile (stm:stms) =
---     case stm of
---         S_assign var aexp ->
---             compA aexp ++ [Store var] ++ compile stms
---         S_if bexp stm1 stm2 ->
---             let
---                 on_true = compile stm1
---                 on_false = compile stm2
---                 condition = compB bexp
---             in
---                 condition ++ [Branch on_true on_false] ++ compile stms
---         S_while bexp stm1 ->
---             let
---                 on_true = compile stm1
---                 condition = compB bexp
---             in
---                 [Loop on_true condition] ++ compile stms
+        [Loop condition on_true] ++ compile prog

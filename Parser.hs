@@ -35,7 +35,6 @@ type Program = [Stm]
 -- Function to parse a program from a string input.
 parse :: String -> Program
 parse input = parseStatements (lexer input)
-
 parseStatements :: [Token] -> [Stm]
 parseStatements [] = []
 parseStatements (T_var var : T_assign : tokens) =
@@ -43,21 +42,20 @@ parseStatements (T_var var : T_assign : tokens) =
         aexp = parseA (takeWhile (/= T_semicolon) tokens)
     in
         S_assign var aexp : parseStatements (drop 1 (dropWhile (/= T_semicolon) tokens))
-
 parseStatements (T_while : tokens) = 
     let 
         bexp = parseB (takeWhile (/= T_do) tokens)
         (body, restTokens) = parseBody (drop 1 (dropWhile (/= T_do) tokens))
     in
         S_while bexp (parseStatements body) : parseStatements (drop 1 (dropWhile (/= T_semicolon) restTokens))
-
 parseStatements (T_if : tokens) =
     let 
         bexp = parseB (takeWhile (/= T_then) tokens)
         (trueBranch, restTokens1) = parseBody (drop 1 (dropWhile (/= T_then) tokens))
         (falseBranch, restTokens2) = parseBody (drop 1 (dropWhile (/= T_else) restTokens1)) 
     in
-        S_if bexp (parseStatements trueBranch) (parseStatements falseBranch) : parseStatements (drop 1 (dropWhile (/= T_semicolon) restTokens2))
+        S_if bexp (parseStatements trueBranch) (parseStatements falseBranch) : parseStatements restTokens2
+parseStatements (T_semicolon : tokens) = parseStatements tokens
 
 parseBody :: [Token] -> ([Token], [Token])
 parseBody (T_lbracket : tokens) = parseBodyAux tokens [] [T_lbracket]
@@ -81,7 +79,6 @@ parseA tokens =
         _ -> error "Run-time error"
 
 -- Parsing integer constants, variables, or expressions within parentheses.
--- Int Var Par
 parseIntOrVarOrPar :: [Token] -> Maybe (Aexp, [Token])
 parseIntOrVarOrPar (T_var var : restTokens)
     = Just (A_var var, restTokens)
@@ -96,7 +93,6 @@ parseIntOrVarOrPar (T_lbracket : restTokens1)
 parseIntOrVarOrPar tokens = Nothing
 
 -- Parsing multiplication, integer constants, variables, or expressions within parentheses.
--- Prod Int Var Par
 parseProdOrIntOrVarOrPar :: [Token] -> Maybe (Aexp, [Token])
 parseProdOrIntOrVarOrPar tokens
     = case parseIntOrVarOrPar tokens of
@@ -108,7 +104,6 @@ parseProdOrIntOrVarOrPar tokens
         result -> result
 
 -- Parsing addition, subtraction, multiplication, integer constants, variables, or expressions within parentheses.
--- Sum Sub Prod Int Var Par
 parseSumOrSubOrProdOrIntOrVarOrPar::[Token] -> Maybe (Aexp, [Token])
 parseSumOrSubOrProdOrIntOrVarOrPar tokens
     = case parseProdOrIntOrVarOrPar tokens of
@@ -134,7 +129,6 @@ parseB tokens =
         _ -> error "Run-time error"
 
 -- Parsing True, False or expressions withing parentheses.
--- True False Par
 parseTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseTrueOrFalseOrPar (T_bool True : restTokens)
     = Just (B_true, restTokens)
@@ -149,7 +143,6 @@ parseTrueOrFalseOrPar (T_lbracket : restTokens1)
 parseTrueOrFalseOrPar tokens = Nothing
 
 -- Parsing less than or equal (Leq) expressions, True, False, or expressions within parentheses.
--- Leq True False Par
 parseLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseLeqOrTrueOrFalseOrPar tokens
     = case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
@@ -161,7 +154,6 @@ parseLeqOrTrueOrFalseOrPar tokens
         _ -> parseTrueOrFalseOrPar tokens
 
 -- Parsing arithmetic equality (Aeq), less than or equal (Leq), True, False, or expressions within parentheses.
--- Aeq Leq True False Par
 parseAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseAeqOrLeqOrTrueOrFalseOrPar tokens
     = case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
@@ -173,7 +165,6 @@ parseAeqOrLeqOrTrueOrFalseOrPar tokens
         _ -> parseLeqOrTrueOrFalseOrPar tokens
 
 -- Parsing boolean negation (Not), arithmetic equality (Aeq), less than or equal (Leq), True, False, or expressions within parentheses.
--- Not Aeq Leq True False Par
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar (T_not : restTokens)
     = case parseAeqOrLeqOrTrueOrFalseOrPar restTokens of
@@ -184,7 +175,6 @@ parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens = parseAeqOrLeqOrTrueOrFalseOrPar to
 
 -- Parsing boolean equality (Beq), boolean negation (Not), arithmetic equality (Aeq),
 -- less than or equal (Leq), True, False, or expressions within parentheses.
--- Beq Not Aeq Leq True False Par
 parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
     = case parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens of
@@ -197,7 +187,6 @@ parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
 
 -- Parsing logical AND (And), boolean equality (Beq), boolean negation (Not), arithmetic equality (Aeq),
 -- less than or equal (Leq), True, False, or expressions within parentheses.
--- And Beq Not Aeq Leq True False Par
 parseAndOrBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseAndOrBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
     = case parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens of 

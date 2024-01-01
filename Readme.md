@@ -12,8 +12,8 @@ Group: &nbsp;&nbsp;`T06_G13`
 
 <table>
 <tr><th>Name</th><th>Student Number</th><th>Contribution (%)</th></tr>
-<tr><td>Diogo Tomás Valente Fernandes</td><td>up202108752</td><td>Over 9000</td></tr>
-<tr><td>Hélder Gabriel Silva Costa</td><td>up202108719</td><td>Over 9000</td></tr>
+<tr><td>Diogo Tomás Valente Fernandes</td><td>up202108752</td><td>50%</td></tr>
+<tr><td>Hélder Gabriel Silva Costa</td><td>up202108719</td><td>50%</td></tr>
 </table>
 
 
@@ -668,5 +668,7 @@ Parser test 12: True
 ## Conclusion
 
 In conclusion, after extensive testing, we are confident in the accurate development of the Interpreter, Compiler, and Parser for the targeted machine.
+
 The primary challenges encountered were rooted in initially navigating a programming language that was unfamiliar to us and different that all the others we studied. Furthermore, while constructing the parser, we struggled with the implementation of if-then/else statements and while loops, having to take into consideration the precendences in both the boolean and arithmetic expressions and the fact that some boolean expressions may have arithmetical expressions included in them.
+
 In the end, we managed to solve all the problems and we feel this helped a lot in understanding some concepts in Haskell as well as consolidating the knowledge acquired in the theoretical and practical classes.

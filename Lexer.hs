@@ -55,12 +55,12 @@ lexer (chr:restStr)
     | isAlpha chr = lexVar (chr:restStr)
     | otherwise = error ("lexer: unexpected character " ++ [chr])
 
--- Function responsible for transforming a integer to it's respective token.
+-- Function responsible for transforming a integer to its respective token.
 lexNum :: String -> [Token]
 lexNum str = T_integer (read numStr) : lexer restStr
     where (numStr, restStr) = span isDigit str
 
--- Function responsible for transforming a variable to it's respective token.
+-- Function responsible for transforming a variable to its respective token.
 lexVar :: String -> [Token]
 lexVar str = T_var varStr : lexer restStr
     where (varStr, restStr) = span isAlpha str

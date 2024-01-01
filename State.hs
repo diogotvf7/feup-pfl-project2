@@ -4,8 +4,10 @@ import Data.List (intercalate)
 import qualified Data.Map as Map
 import Value
 
+-- Definition of the new type Var (variable)
 type Var = String
 
+-- Definition for the machine's State.
 type State = Map.Map Var Val
 
 -- Function to create an empty state.

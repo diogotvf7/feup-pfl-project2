@@ -259,66 +259,6 @@ run (code, stack, state) =
 
 In order to test our code we ran it through several test cases, and got positive results in all of them, here are the tests we ran:
 
-```hs
-testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
-testAssembler [Fals,Push 3,Tru,Store "var",Store "a", Store "someVar"] == ("","a=3,someVar=False,var=True")
-testAssembler [Fals,Store "var",Fetch "var"] == ("False","var=False")
-testAssembler [Push (-20),Tru,Fals] == ("False,True,-20","")
-testAssembler [Push (-20),Tru,Tru,Neg] == ("False,True,-20","")
-testAssembler [Push (-20),Tru,Tru,Neg,Equ] == ("False,-20","")
-testAssembler [Push (-20),Push (-21), Le] == ("True","")
-testAssembler [Push 5,Store "x",Push 1,Fetch "x",Sub,Store "x"] == ("","x=4")
-testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1")
-testParser "x := 5; x := x - 1;" == ("","x=4")
-testParser "x := 0 - 2;" == ("","x=-2")
-testParser "if (not True and 2 <= 5 = 3 == 4) then x :=1; else y := 2;" == ("","y=2")
-testParser "x := 42; if x <= 43 then x := 1; else (x := 33; x := x+1;);" == ("","x=1")
-testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1;" == ("","x=2")
-testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1; z := x+x;" == ("","x=2,z=4")
-testParser "x := 44; if x <= 43 then x := 1; else (x := 33; x := x+1;); y := x*2;" == ("","x=34,y=68")
-testParser "x := 42; if x <= 43 then (x := 33; x := x+1;) else x := 1;" == ("","x=34")
-testParser "if (1 == 0+1 = 2+1 == 3) then x := 1; else x := 2;" == ("","x=1")
-testParser "if (1 == 0+1 = (2+1 == 4)) then x := 1; else x := 2;" == ("","x=2")
-testParser "x := 2; y := (x - 3)*(4 + 2*3); z := x +x*(2);" == ("","x=2,y=-10,z=6")
-testParser "i := 10; fact := 1; while (not(i == 1)) do (fact := fact * i; i := i - 1;);" == ("","fact=3628800,i=1")
-```
-
-```txt
-ghci> :l Main.hs 
-[1 of 9] Compiling Inst             ( Inst.hs, interpreted )
-[2 of 9] Compiling Lexer            ( Lexer.hs, interpreted )
-[3 of 9] Compiling Parser           ( Parser.hs, interpreted )
-[4 of 9] Compiling Compiler         ( Compiler.hs, interpreted )
-[5 of 9] Compiling Value            ( Value.hs, interpreted )
-[6 of 9] Compiling State            ( State.hs, interpreted )
-[7 of 9] Compiling Stack            ( Stack.hs, interpreted )
-[8 of 9] Compiling Interpreter      ( Interpreter.hs, interpreted )
-[9 of 9] Compiling Main             ( Main.hs, interpreted )
-Ok, 9 modules loaded.
-ghci> main
-Assembler test 1: True
-Assembler test 2: True
-Assembler test 3: True
-Assembler test 4: True
-Assembler test 5: True
-Assembler test 6: True
-Assembler test 7: True
-Assembler test 8: True
-Assembler test 9: True
-Parser test 1: True
-Parser test 2: True
-Parser test 3: True
-Parser test 4: True
-Parser test 5: True
-Parser test 6: True
-Parser test 7: True
-Parser test 8: True
-Parser test 9: True
-Parser test 10: True
-Parser test 11: True
-Parser test 12: True
-```
-
 ## Part 2
 
 ### Description
@@ -481,7 +421,6 @@ parseA tokens =
         _ -> error "Run-time error"
 
 -- Parsing integer constants, variables, or expressions within parentheses.
--- Int Var Par
 parseIntOrVarOrPar :: [Token] -> Maybe (Aexp, [Token])
 parseIntOrVarOrPar (T_var var : restTokens)
     = Just (A_var var, restTokens)
@@ -496,7 +435,6 @@ parseIntOrVarOrPar (T_lbracket : restTokens1)
 parseIntOrVarOrPar tokens = Nothing
 
 -- Parsing multiplication, integer constants, variables, or expressions within parentheses.
--- Prod Int Var Par
 parseProdOrIntOrVarOrPar :: [Token] -> Maybe (Aexp, [Token])
 parseProdOrIntOrVarOrPar tokens
     = case parseIntOrVarOrPar tokens of
@@ -508,7 +446,6 @@ parseProdOrIntOrVarOrPar tokens
         result -> result
 
 -- Parsing addition, subtraction, multiplication, integer constants, variables, or expressions within parentheses.
--- Sum Sub Prod Int Var Par
 parseSumOrSubOrProdOrIntOrVarOrPar::[Token] -> Maybe (Aexp, [Token])
 parseSumOrSubOrProdOrIntOrVarOrPar tokens
     = case parseProdOrIntOrVarOrPar tokens of
@@ -536,7 +473,6 @@ parseB tokens =
         _ -> error "Run-time error"
 
 -- Parsing True, False or expressions withing parentheses.
--- True False Par
 parseTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseTrueOrFalseOrPar (T_bool True : restTokens)
     = Just (B_true, restTokens)
@@ -551,7 +487,6 @@ parseTrueOrFalseOrPar (T_lbracket : restTokens1)
 parseTrueOrFalseOrPar tokens = Nothing
 
 -- Parsing less than or equal (Leq) expressions, True, False, or expressions within parentheses.
--- Leq True False Par
 parseLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseLeqOrTrueOrFalseOrPar tokens
     = case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
@@ -563,7 +498,6 @@ parseLeqOrTrueOrFalseOrPar tokens
         _ -> parseTrueOrFalseOrPar tokens
 
 -- Parsing arithmetic equality (Aeq), less than or equal (Leq), True, False, or expressions within parentheses.
--- Aeq Leq True False Par
 parseAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseAeqOrLeqOrTrueOrFalseOrPar tokens
     = case parseSumOrSubOrProdOrIntOrVarOrPar tokens of
@@ -574,34 +508,17 @@ parseAeqOrLeqOrTrueOrFalseOrPar tokens
                 Nothing -> Nothing
         _ -> parseLeqOrTrueOrFalseOrPar tokens
 
--- Not Aeq Leq True False Par
--- parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
--- parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
---     = case parseAeqOrLeqOrTrueOrFalseOrPar tokens of
---         Just (expr1, (T_not : restTokens1)) ->
---             case parseNotOrAeqOrLeqOrTrueOrFalseOrPar restTokens1 of
---                 Just (expr2, restTokens2) ->
---                     Just (B_not expr2, restTokens2)
---                 Nothing -> Nothing
---         a -> error $ "error: " ++ show a 
---         Just (expr1, _) -> error $ "Expr: " ++ show expr1
---         result -> result
-
 -- Parsing boolean negation (Not), arithmetic equality (Aeq), less than or equal (Leq), True, False, or expressions within parentheses.
--- Not Aeq Leq True False Par
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar (T_not : restTokens)
-    -- = error $ "rest: " ++ show restTokens
     = case parseAeqOrLeqOrTrueOrFalseOrPar restTokens of
         Just (expr1, restTokens1) ->
             Just (B_not expr1, restTokens1)
-        -- result -> error "AMDIASJDIJA IODJAISO JDOAJD OIASJDIO JASSOIDJ AS"
         result -> parseAeqOrLeqOrTrueOrFalseOrPar restTokens
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens = parseAeqOrLeqOrTrueOrFalseOrPar tokens
 
 -- Parsing boolean equality (Beq), boolean negation (Not), arithmetic equality (Aeq),
 -- less than or equal (Leq), True, False, or expressions within parentheses.
--- Beq Not Aeq Leq True False Par
 parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
     = case parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens of
@@ -614,7 +531,6 @@ parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
 
 -- Parsing logical AND (And), boolean equality (Beq), boolean negation (Not), arithmetic equality (Aeq),
 -- less than or equal (Leq), True, False, or expressions within parentheses.
--- And Beq Not Aeq Leq True False Par
 parseAndOrBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseAndOrBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
     = case parseBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens of 
@@ -625,3 +541,132 @@ parseAndOrBeqOrNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
                 Nothing -> Nothing
         result -> result
 ```
+
+After we created two helper functions for parsing a body that appears enclosed in parentheses, the *parseBody* and *parseBodyAux*, here are the corresponding codes : 
+
+```hs
+-- Parse the body of a block, enclosed in parentheses.
+parseBody :: [Token] -> ([Token], [Token])
+parseBody (T_lbracket : tokens) = parseBodyAux tokens [] [T_lbracket]
+parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens,
+                   drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens))
+
+-- Auxiliary function to help parse the body of a block
+parseBodyAux :: [Token] -> [Token] -> [Token] -> ([Token], [Token])
+parseBodyAux [] body stack = error "Run-time error"                                        -- Unmatched brackets.
+parseBodyAux (T_lbracket : tokens) body stack = parseBodyAux tokens (body ++ [T_lbracket]) (T_lbracket : stack)
+parseBodyAux (T_rbracket : tokens) body (T_lbracket : stack) = 
+    if stack == [] then (body, tokens)                                                     -- Successfully matched brackets.
+    else parseBodyAux tokens (body ++ [T_rbracket]) stack
+parseBodyAux (token : tokens) body stack = parseBodyAux tokens (body ++ [token]) stack
+```
+
+And then finally we developed the main parser function that includes the code to parse if->then / else and while loops as well as the callers for all the functions developed previously, here's the respective code:
+
+```hs
+-- Function to parse a program from a string input.
+parse :: String -> Program
+parse input = parseStatements (lexer input)
+
+-- Parse a list of tokens into a list of statements.
+parseStatements :: [Token] -> [Stm]
+parseStatements [] = []
+parseStatements (T_var var : T_assign : tokens) =
+    let 
+        aexp = parseA (takeWhile (/= T_semicolon) tokens)  -- Parse arithmetic expression.
+    in
+        S_assign var aexp : parseStatements (drop 1 (dropWhile (/= T_semicolon) tokens))
+
+-- Parsing of a while loop
+parseStatements (T_while : tokens) = 
+    let 
+        bexp = parseB (takeWhile (/= T_do) tokens)                            -- Parse boolean expression.
+        (body, restTokens) = parseBody (drop 1 (dropWhile (/= T_do) tokens))  -- Parse while loop body.
+    in
+        S_while bexp (parseStatements body) : parseStatements (drop 1 (dropWhile (/= T_semicolon) restTokens))
+
+-- Parsing of a if->then / else
+parseStatements (T_if : tokens) =
+    let 
+        bexp = parseB (takeWhile (/= T_then) tokens)                                        -- Parse boolean expression.
+        (trueBranch, restTokens1) = parseBody (drop 1 (dropWhile (/= T_then) tokens))       -- Parse true branch of if statement.
+        (falseBranch, restTokens2) = parseBody (drop 1 (dropWhile (/= T_else) restTokens1)) -- Parse false branch of if statement.
+    in
+        S_if bexp (parseStatements trueBranch) (parseStatements falseBranch) : parseStatements restTokens2
+
+parseStatements (T_semicolon : tokens) = parseStatements tokens
+```
+
+In this code, the Program variable relates to a list of Statements.
+
+To test all the code developed we ran several tests, for the Assembler and the Parser, all of the results were positive assuring us we developed the code and solved the problems correctly.
+
+The tests we ran:
+
+```hs
+testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
+testAssembler [Fals,Push 3,Tru,Store "var",Store "a", Store "someVar"] == ("","a=3,someVar=False,var=True")
+testAssembler [Fals,Store "var",Fetch "var"] == ("False","var=False")
+testAssembler [Push (-20),Tru,Fals] == ("False,True,-20","")
+testAssembler [Push (-20),Tru,Tru,Neg] == ("False,True,-20","")
+testAssembler [Push (-20),Tru,Tru,Neg,Equ] == ("False,-20","")
+testAssembler [Push (-20),Push (-21), Le] == ("True","")
+testAssembler [Push 5,Store "x",Push 1,Fetch "x",Sub,Store "x"] == ("","x=4")
+testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1")
+testParser "x := 5; x := x - 1;" == ("","x=4")
+testParser "x := 0 - 2;" == ("","x=-2")
+testParser "if (not True and 2 <= 5 = 3 == 4) then x :=1; else y := 2;" == ("","y=2")
+testParser "x := 42; if x <= 43 then x := 1; else (x := 33; x := x+1;);" == ("","x=1")
+testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1;" == ("","x=2")
+testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1; z := x+x;" == ("","x=2,z=4")
+testParser "x := 44; if x <= 43 then x := 1; else (x := 33; x := x+1;); y := x*2;" == ("","x=34,y=68")
+testParser "x := 42; if x <= 43 then (x := 33; x := x+1;) else x := 1;" == ("","x=34")
+testParser "if (1 == 0+1 = 2+1 == 3) then x := 1; else x := 2;" == ("","x=1")
+testParser "if (1 == 0+1 = (2+1 == 4)) then x := 1; else x := 2;" == ("","x=2")
+testParser "x := 2; y := (x - 3)*(4 + 2*3); z := x +x*(2);" == ("","x=2,y=-10,z=6")
+testParser "i := 10; fact := 1; while (not(i == 1)) do (fact := fact * i; i := i - 1;);" == ("","fact=3628800,i=1")
+```
+
+And the results we got:
+
+```txt
+ghci> :l Main.hs 
+[1 of 9] Compiling Inst             ( Inst.hs, interpreted )
+[2 of 9] Compiling Lexer            ( Lexer.hs, interpreted )
+[3 of 9] Compiling Parser           ( Parser.hs, interpreted )
+[4 of 9] Compiling Compiler         ( Compiler.hs, interpreted )
+[5 of 9] Compiling Value            ( Value.hs, interpreted )
+[6 of 9] Compiling State            ( State.hs, interpreted )
+[7 of 9] Compiling Stack            ( Stack.hs, interpreted )
+[8 of 9] Compiling Interpreter      ( Interpreter.hs, interpreted )
+[9 of 9] Compiling Main             ( Main.hs, interpreted )
+Ok, 9 modules loaded.
+ghci> main
+Assembler test 1: True
+Assembler test 2: True
+Assembler test 3: True
+Assembler test 4: True
+Assembler test 5: True
+Assembler test 6: True
+Assembler test 7: True
+Assembler test 8: True
+Assembler test 9: True
+Parser test 1: True
+Parser test 2: True
+Parser test 3: True
+Parser test 4: True
+Parser test 5: True
+Parser test 6: True
+Parser test 7: True
+Parser test 8: True
+Parser test 9: True
+Parser test 10: True
+Parser test 11: True
+Parser test 12: True
+```
+
+## Conclusion
+
+In conclusion, after extensive testing, we are confident in the accurate development of the Interpreter, Compiler, and Parser for the targeted machine.
+The primary challenges encountered were rooted in initially navigating a programming language that was unfamiliar to us and different that all the others we studied. Furthermore, while constructing the parser, we struggled with the implementation of if-then/else statements and while loops, having to take into consideration the precendences in both the boolean and arithmetic expressions and the fact that some boolean expressions may have arithmetical expressions included in them.
+In the end, we managed to solve all the problems and we feel this helped a lot in understanding some concepts in Haskell as well as consolidating the knowledge acquired in the theoretical and practical classes.

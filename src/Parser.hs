@@ -35,39 +35,50 @@ type Program = [Stm]
 -- Function to parse a program from a string input.
 parse :: String -> Program
 parse input = parseStatements (lexer input)
+
+-- Parse a list of tokens into a list of statements.
 parseStatements :: [Token] -> [Stm]
 parseStatements [] = []
 parseStatements (T_var var : T_assign : tokens) =
     let 
-        aexp = parseA (takeWhile (/= T_semicolon) tokens)
+        aexp = parseA (takeWhile (/= T_semicolon) tokens)  -- Parse arithmetic expression.
     in
         S_assign var aexp : parseStatements (drop 1 (dropWhile (/= T_semicolon) tokens))
+
+-- Parsing of a while loop
 parseStatements (T_while : tokens) = 
     let 
-        bexp = parseB (takeWhile (/= T_do) tokens)
-        (body, restTokens) = parseBody (drop 1 (dropWhile (/= T_do) tokens))
+        bexp = parseB (takeWhile (/= T_do) tokens)                            -- Parse boolean expression.
+        (body, restTokens) = parseBody (drop 1 (dropWhile (/= T_do) tokens))  -- Parse while loop body.
     in
         S_while bexp (parseStatements body) : parseStatements (drop 1 (dropWhile (/= T_semicolon) restTokens))
+
+-- Parsing of a if->then / else
 parseStatements (T_if : tokens) =
     let 
-        bexp = parseB (takeWhile (/= T_then) tokens)
-        (trueBranch, restTokens1) = parseBody (drop 1 (dropWhile (/= T_then) tokens))
-        (falseBranch, restTokens2) = parseBody (drop 1 (dropWhile (/= T_else) restTokens1)) 
+        bexp = parseB (takeWhile (/= T_then) tokens)                                        -- Parse boolean expression.
+        (trueBranch, restTokens1) = parseBody (drop 1 (dropWhile (/= T_then) tokens))       -- Parse true branch of if statement.
+        (falseBranch, restTokens2) = parseBody (drop 1 (dropWhile (/= T_else) restTokens1)) -- Parse false branch of if statement.
     in
         S_if bexp (parseStatements trueBranch) (parseStatements falseBranch) : parseStatements restTokens2
+
 parseStatements (T_semicolon : tokens) = parseStatements tokens
 
+-- Parse the body of a block, enclosed in parentheses.
 parseBody :: [Token] -> ([Token], [Token])
 parseBody (T_lbracket : tokens) = parseBodyAux tokens [] [T_lbracket]
-parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens, drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens))
+parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens,
+                   drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens))
 
+-- Auxiliary function to help parse the body of a block
 parseBodyAux :: [Token] -> [Token] -> [Token] -> ([Token], [Token])
-parseBodyAux [] body stack = error "Run-time error"
+parseBodyAux [] body stack = error "Run-time error"                                        -- Unmatched brackets.
 parseBodyAux (T_lbracket : tokens) body stack = parseBodyAux tokens (body ++ [T_lbracket]) (T_lbracket : stack)
 parseBodyAux (T_rbracket : tokens) body (T_lbracket : stack) = 
-    if stack == [] then (body, tokens)
+    if stack == [] then (body, tokens)                                                     -- Successfully matched brackets.
     else parseBodyAux tokens (body ++ [T_rbracket]) stack
 parseBodyAux (token : tokens) body stack = parseBodyAux tokens (body ++ [token]) stack
+
 
 -- --------------------------------- PARSE A -------------------------------------------
 

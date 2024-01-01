@@ -259,56 +259,65 @@ run (code, stack, state) =
 
 In order to test our code we ran it through several test cases, and got positive results in all of them, here are the tests we ran:
 
-Nsei se deviamos incluir idk, são imensos testes.
 ```hs
-main :: IO ()
-main = do
-  putStrLn $ "Test 1: " ++ show (testAssembler [Push 42, Push 10, Push 5] == ("5,10,42", ""))
-  putStrLn $ "Test 2: " ++ show (testAssembler [Push 42, Push 10, Add] == ("52", ""))
-  putStrLn $ "Test 3: " ++ show (testAssembler [Push 42, Push 10, Mult] == ("420", ""))
-  putStrLn $ "Test 4: " ++ show (testAssembler [Push 10, Push 42, Sub] == ("32", ""))
-  putStrLn $ "Test 5: " ++ show (testAssembler [Tru, Tru, Tru] == ("True,True,True", ""))
-  putStrLn $ "Test 6: " ++ show (testAssembler [Fals, Fals, Fals] == ("False,False,False", ""))
-  putStrLn $ "Test 7: " ++ show (testAssembler [Push 42, Push 42, Equ] == ("True", ""))
-  putStrLn $ "Test 8: " ++ show (testAssembler [Push 42, Push 10, Equ] == ("False", ""))
-  putStrLn $ "Test 9: " ++ show (testAssembler [Tru, Fals, Equ] == ("False", ""))
-  putStrLn $ "Test 11: " ++ show (testAssembler [Tru, Tru, Equ] == ("True", ""))
-  putStrLn $ "Test 12: " ++ show (testAssembler [Push 42, Push 42, Le] == ("True", ""))
-  putStrLn $ "Test 13: " ++ show (testAssembler [Push 42, Push 10, Le] == ("True", ""))
-  putStrLn $ "Test 14: " ++ show (testAssembler [Push 10, Push 42, Le] == ("False", ""))
-  putStrLn $ "Test 15: " ++ show (testAssembler [Tru, Tru, And] == ("True", ""))
-  putStrLn $ "Test 16: " ++ show (testAssembler [Tru, Fals, And] == ("False", ""))
-  putStrLn $ "Test 17: " ++ show (testAssembler [Fals, Tru, And] == ("False", ""))
-  putStrLn $ "Test 18: " ++ show (testAssembler [Fals, Fals, And] == ("False", ""))
-  putStrLn $ "Test 19: " ++ show (testAssembler [Tru, Neg] == ("False", ""))
-  putStrLn $ "Test 20: " ++ show (testAssembler [Fals, Neg] == ("True", ""))
-  putStrLn $ "Test 21: " ++ show (testAssembler [Push 42, Store "var", Fetch "var"] == ("42", "var=42"))
-  putStrLn $ "Test 22: " ++ show (testAssembler [Tru, Store "var", Fetch "var"] == ("True", "var=True"))
-  putStrLn $ "Test 23: " ++ show (testAssembler [Noop] == ("", ""))
-  putStrLn $ "Test 24: " ++ show (testAssembler [Push 42, Noop] == ("42", ""))
-  putStrLn $ "Test 25: " ++ show (testAssembler [Push 42, Noop, Push 10, Noop, Noop] == ("10,42", ""))
-  putStrLn $ "Test 26: " ++ show (testAssembler [Tru, Branch [Push 42] [Push 10]] == ("42", ""))
-  putStrLn $ "Test 27: " ++ show (testAssembler [Fals, Branch [Push 42] [Push 10]] == ("10", ""))
-  putStrLn $ "Test 28: " ++ show (testAssembler [Push 42, Tru, Branch [Push 42] [Push 10]] == ("42,42", ""))
-  putStrLn $ "Test 29: " ++ show (testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1"))
-  putStrLn $ "Test 26: " ++ show (testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10",""))
-  putStrLn $ "Test 27: " ++ show (testAssembler [Fals,Push 3,Tru,Store "var",Store "a", Store "someVar"] == ("","a=3,someVar=False,var=True"))
-  putStrLn $ "Test 28: " ++ show (testAssembler [Fals,Store "var",Fetch "var"] == ("False","var=False"))
-  putStrLn $ "Test 29: " ++ show (testAssembler [Push (-20),Tru,Fals] == ("False,True,-20",""))
-  putStrLn $ "Test 30: " ++ show (testAssembler [Push (-20),Tru,Tru,Neg] == ("False,True,-20",""))
-  putStrLn $ "Test 31: " ++ show (testAssembler [Push (-20),Tru,Tru,Neg,Equ] == ("False,-20",""))
-  putStrLn $ "Test 32: " ++ show (testAssembler [Push (-20),Push (-21), Le] == ("True",""))
-  putStrLn $ "Test 33: " ++ show (testAssembler [Push 5,Store "x",Push 1,Fetch "x",Sub,Store "x"] == ("","x=4"))
-  putStrLn $ "Test 34: " ++ show (testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1"))
-
-testAssembler :: Code -> (String, String)
-testAssembler code = (stack2Str stack, state2Str state)
-  where (_,stack,state) = run(code, createEmptyStack, createEmptyState)
+testAssembler [Push 10,Push 4,Push 3,Sub,Mult] == ("-10","")
+testAssembler [Fals,Push 3,Tru,Store "var",Store "a", Store "someVar"] == ("","a=3,someVar=False,var=True")
+testAssembler [Fals,Store "var",Fetch "var"] == ("False","var=False")
+testAssembler [Push (-20),Tru,Fals] == ("False,True,-20","")
+testAssembler [Push (-20),Tru,Tru,Neg] == ("False,True,-20","")
+testAssembler [Push (-20),Tru,Tru,Neg,Equ] == ("False,-20","")
+testAssembler [Push (-20),Push (-21), Le] == ("True","")
+testAssembler [Push 5,Store "x",Push 1,Fetch "x",Sub,Store "x"] == ("","x=4")
+testAssembler [Push 10,Store "i",Push 1,Store "fact",Loop [Push 1,Fetch "i",Equ,Neg] [Fetch "i",Fetch "fact",Mult,Store "fact",Push 1,Fetch "i",Sub,Store "i"]] == ("","fact=3628800,i=1")
+testParser "x := 5; x := x - 1;" == ("","x=4")
+testParser "x := 0 - 2;" == ("","x=-2")
+testParser "if (not True and 2 <= 5 = 3 == 4) then x :=1; else y := 2;" == ("","y=2")
+testParser "x := 42; if x <= 43 then x := 1; else (x := 33; x := x+1;);" == ("","x=1")
+testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1;" == ("","x=2")
+testParser "x := 42; if x <= 43 then x := 1; else x := 33; x := x+1; z := x+x;" == ("","x=2,z=4")
+testParser "x := 44; if x <= 43 then x := 1; else (x := 33; x := x+1;); y := x*2;" == ("","x=34,y=68")
+testParser "x := 42; if x <= 43 then (x := 33; x := x+1;) else x := 1;" == ("","x=34")
+testParser "if (1 == 0+1 = 2+1 == 3) then x := 1; else x := 2;" == ("","x=1")
+testParser "if (1 == 0+1 = (2+1 == 4)) then x := 1; else x := 2;" == ("","x=2")
+testParser "x := 2; y := (x - 3)*(4 + 2*3); z := x +x*(2);" == ("","x=2,y=-10,z=6")
+testParser "i := 10; fact := 1; while (not(i == 1)) do (fact := fact * i; i := i - 1;);" == ("","fact=3628800,i=1")
 ```
 
-And the corresponding results:
-
-![Test Results](images/Tests1.png)
+```txt
+ghci> :l Main.hs 
+[1 of 9] Compiling Inst             ( Inst.hs, interpreted )
+[2 of 9] Compiling Lexer            ( Lexer.hs, interpreted )
+[3 of 9] Compiling Parser           ( Parser.hs, interpreted )
+[4 of 9] Compiling Compiler         ( Compiler.hs, interpreted )
+[5 of 9] Compiling Value            ( Value.hs, interpreted )
+[6 of 9] Compiling State            ( State.hs, interpreted )
+[7 of 9] Compiling Stack            ( Stack.hs, interpreted )
+[8 of 9] Compiling Interpreter      ( Interpreter.hs, interpreted )
+[9 of 9] Compiling Main             ( Main.hs, interpreted )
+Ok, 9 modules loaded.
+ghci> main
+Assembler test 1: True
+Assembler test 2: True
+Assembler test 3: True
+Assembler test 4: True
+Assembler test 5: True
+Assembler test 6: True
+Assembler test 7: True
+Assembler test 8: True
+Assembler test 9: True
+Parser test 1: True
+Parser test 2: True
+Parser test 3: True
+Parser test 4: True
+Parser test 5: True
+Parser test 6: True
+Parser test 7: True
+Parser test 8: True
+Parser test 9: True
+Parser test 10: True
+Parser test 11: True
+Parser test 12: True
+```
 
 ## Part 2
 

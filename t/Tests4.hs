@@ -13,6 +13,7 @@ main = do
     -- putStrLn $ "Test 7: " ++ show (parseB (lexer "1 == 2 = 3 == 4"))
     -- putStrLn $ "Test 8: " ++ show (parseB (lexer "1 == 2"))
     -- putStrLn $ "Test 9: " ++ show (parseB (lexer "not True"))
-    putStrLn $ "Test 10: " ++ show (parseB [T_not,T_bool True,T_and,T_integer 2,T_leq,T_integer 5,T_beq,T_integer 3,T_aeq,T_integer 4])
-
+    putStrLn $ "Test 11: " ++ show (parseB [T_not,T_bool True,T_and,T_integer 2,T_leq,T_integer 5,T_beq,T_integer 3,T_aeq,T_integer 4])
+    putStrLn $ "Test 12: " ++ show (parseStatements [T_var "x",T_assign,T_integer 1])
+    putStrLn $ "Test 13: " ++ show (parseStatements [T_var "y",T_assign,T_integer 2])
 

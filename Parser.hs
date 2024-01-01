@@ -38,42 +38,30 @@ parse input = parseStatements (lexer input)
 
 parseStatements :: [Token] -> [Stm]
 parseStatements [] = []
-
 parseStatements (T_var var : T_assign : tokens) =
     let 
         aexp = parseA (takeWhile (/= T_semicolon) tokens)
     in
         S_assign var aexp : parseStatements (drop 1 (dropWhile (/= T_semicolon) tokens))
 
--- parseStatements (T_while : tokens) = 
---     let 
---         bexp = parseB takeWhile (/= T_do) tokens
---         (body, tokens') = parseStatements drop 1 (dropWhile (/= T_do) tokens)
---     in
---         S_while bexp body : 
+parseStatements (T_while : tokens) = 
+    let 
+        bexp = parseB (takeWhile (/= T_do) tokens)
+        (body, restTokens) = parseBody (drop 1 (dropWhile (/= T_do) tokens))
+    in
+        S_while bexp (parseStatements body) : parseStatements (drop 1 (dropWhile (/= T_semicolon) restTokens))
 
--- if Bexp then [Stm] else [Stm] ;
-parseStatements (T_if : tokens) = 
-    case parseBody tokens of
-        (condition, restTokens1) -> 
-            -- error $ "\n\ncondition: " ++ show condition ++ "\n\n rest: " ++ show restTokens1
-            case parseBody (restTokens1) of
-                (trueBranch, restTokens2) ->
-                    case parseBody (restTokens2) of
-                        (falseBranch, restTokens3) ->
-                            -- error $ "\n\ncondition: " ++ show condition ++ "\n\ntrueBranch: " ++ show (drop 1 trueBranch) ++ "\n\nfalseBranch: " ++ show (drop 1 falseBranch)
-                            case restTokens3 of
-                                (T_semicolon : restTokens4) ->
-                                    S_if (parseB condition) (parseStatements (drop 1 trueBranch)) (parseStatements (drop 1 falseBranch)) : parseStatements restTokens4
-                                (restTokens4) -> 
-                                    S_if (parseB condition) (parseStatements (drop 1 trueBranch)) (parseStatements (drop 1 falseBranch)) : parseStatements restTokens4
-
+parseStatements (T_if : tokens) =
+    let 
+        bexp = parseB (takeWhile (/= T_then) tokens)
+        (trueBranch, restTokens1) = parseBody (drop 1 (dropWhile (/= T_then) tokens))
+        (falseBranch, restTokens2) = parseBody (drop 1 (dropWhile (/= T_else) restTokens1)) 
+    in
+        S_if bexp (parseStatements trueBranch) (parseStatements falseBranch) : parseStatements (drop 1 (dropWhile (/= T_semicolon) restTokens2))
 
 parseBody :: [Token] -> ([Token], [Token])
 parseBody (T_lbracket : tokens) = parseBodyAux tokens [] [T_lbracket]
-parseBody tokens = (takeWhile (/= T_semicolon) tokens, drop 1 (dropWhile (/= T_semicolon) tokens))
--- parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then) tokens, drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then) tokens))
--- parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens, drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens))
+parseBody tokens = (takeWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens, drop 1 (dropWhile (\t -> t /= T_semicolon && t /= T_then && t /= T_else) tokens))
 
 parseBodyAux :: [Token] -> [Token] -> [Token] -> ([Token], [Token])
 parseBodyAux [] body stack = error "Run-time error"
@@ -184,28 +172,13 @@ parseAeqOrLeqOrTrueOrFalseOrPar tokens
                 Nothing -> Nothing
         _ -> parseLeqOrTrueOrFalseOrPar tokens
 
--- Not Aeq Leq True False Par
--- parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
--- parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens
---     = case parseAeqOrLeqOrTrueOrFalseOrPar tokens of
---         Just (expr1, (T_not : restTokens1)) ->
---             case parseNotOrAeqOrLeqOrTrueOrFalseOrPar restTokens1 of
---                 Just (expr2, restTokens2) ->
---                     Just (B_not expr2, restTokens2)
---                 Nothing -> Nothing
---         a -> error $ "error: " ++ show a 
---         Just (expr1, _) -> error $ "Expr: " ++ show expr1
---         result -> result
-
 -- Parsing boolean negation (Not), arithmetic equality (Aeq), less than or equal (Leq), True, False, or expressions within parentheses.
 -- Not Aeq Leq True False Par
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar :: [Token] -> Maybe (Bexp, [Token])
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar (T_not : restTokens)
-    -- = error $ "rest: " ++ show restTokens
     = case parseAeqOrLeqOrTrueOrFalseOrPar restTokens of
         Just (expr1, restTokens1) ->
             Just (B_not expr1, restTokens1)
-        -- result -> error "AMDIASJDIJA IODJAISO JDOAJD OIASJDIO JASSOIDJ AS"
         result -> parseAeqOrLeqOrTrueOrFalseOrPar restTokens
 parseNotOrAeqOrLeqOrTrueOrFalseOrPar tokens = parseAeqOrLeqOrTrueOrFalseOrPar tokens
 
